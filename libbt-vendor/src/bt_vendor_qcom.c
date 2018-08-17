@@ -43,7 +43,7 @@
 
 #include <cutils/properties.h>
 #include <cutils/sockets.h>
-#include <utils/Log.h>
+#include <log/log.h>
 #define WAIT_TIMEOUT 200000
 #define BT_VND_OP_GET_LINESPEED 30
 
@@ -227,7 +227,6 @@ static int get_bt_soc_type()
 bool can_perform_action(char action) {
     bool can_perform = false;
     char ref_count[PROPERTY_VALUE_MAX];
-    char inProgress[PROPERTY_VALUE_MAX] = {'\0'};
     int value, ret;
 
     property_get("wc_transport.ref_count", ref_count, "0");
@@ -282,7 +281,6 @@ void stop_hci_filter() {
        char value[PROPERTY_VALUE_MAX] = {'\0'};
        int retval, filter_ctrl, i;
        char stop_val = STOP_WCNSS_FILTER;
-       int soc_type = BT_SOC_DEFAULT;
 
        ALOGV("%s: Entry ", __func__);
 
@@ -374,7 +372,6 @@ static int bt_powerup(int en )
     int fd = 0, size, i, ret, fd_ldo, fd_btpower;
 
     char disable[PROPERTY_VALUE_MAX];
-    char state;
     char on = (en)?'1':'0';
 
 #ifdef WIFI_BT_STATUS_SYNC
@@ -555,7 +552,6 @@ static int bt_powerup(int en )
     bt_semaphore_destroy(lock_fd);
 #endif /* WIFI_BT_STATUS_SYNC */
 
-done:
     if (fd >= 0)
         close(fd);
     return 0;
@@ -603,7 +599,7 @@ static int init(const bt_vendor_callbacks_t *cb, unsigned char *bdaddr)
 {
     char prop[PROPERTY_VALUE_MAX] = {0};
     struct bt_qcom_struct *temp = NULL;
-    int ret = BT_STATUS_SUCCESS, i;
+    int ret = BT_STATUS_SUCCESS;
 
     ALOGI("++%s", __FUNCTION__);
 
@@ -684,7 +680,7 @@ static bool validate_tok(char* bdaddr_tok) {
 #endif /*READ_BT_ADDR_FROM_PROP*/
 
 int connect_to_local_socket(char* name) {
-       socklen_t len; int sk = -1;
+       int sk = -1;
 
        ALOGE("%s: ACCEPT ", __func__);
        sk  = socket(AF_LOCAL, SOCK_STREAM, 0);
@@ -730,13 +726,11 @@ bool is_soc_initialized() {
 static int __op(bt_vendor_opcode_t opcode, void *param)
 {
     int retval = BT_STATUS_SUCCESS;
-    int nCnt = 0;
     int nState = -1;
     bool is_ant_req = false;
     bool is_fm_req = false;
     char wipower_status[PROPERTY_VALUE_MAX];
     char emb_wp_mode[PROPERTY_VALUE_MAX];
-    char bt_version[PROPERTY_VALUE_MAX];
     char lpm_config[PROPERTY_VALUE_MAX];
     bool ignore_boot_prop = TRUE;
 #ifdef READ_BT_ADDR_FROM_PROP
@@ -1293,7 +1287,6 @@ userial_open:
             }
     }
 
-out:
     ALOGV("--%s", __FUNCTION__);
     return retval;
 }
@@ -1355,22 +1348,22 @@ static void ssr_cleanup(int reason)
         }
 
         /* Close both ANT channel */
-        __op(BT_VND_OP_ANT_USERIAL_CLOSE, NULL);
+        op(BT_VND_OP_ANT_USERIAL_CLOSE, NULL);
 #endif
         /* Close both BT channel */
-        __op(BT_VND_OP_USERIAL_CLOSE, NULL);
+        op(BT_VND_OP_USERIAL_CLOSE, NULL);
 
 #ifdef FM_OVER_UART
-        __op(BT_VND_OP_FM_USERIAL_CLOSE, NULL);
+        op(BT_VND_OP_FM_USERIAL_CLOSE, NULL);
 #endif
         /*CTRL OFF twice to make sure hw
          * turns off*/
 #ifdef ENABLE_ANT
-        __op(BT_VND_OP_POWER_CTRL, &pwr_state);
+        op(BT_VND_OP_POWER_CTRL, &pwr_state);
 #endif
     }
     /*Generally switching of chip should be enough*/
-    __op(BT_VND_OP_POWER_CTRL, &pwr_state);
+    op(BT_VND_OP_POWER_CTRL, &pwr_state);
 
 out:
     pthread_mutex_unlock(&q_lock);

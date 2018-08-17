@@ -55,7 +55,7 @@ extern "C" {
 #include <unistd.h>
 
 #include <cutils/properties.h>
-#include <utils/Log.h>
+#include <log/log.h>
 
 #define BT_VERSION_FILEPATH "/data/misc/bluedroid/bt_fw_version.txt"
 
@@ -319,7 +319,7 @@ failed:
 int read_vs_hci_event(int fd, unsigned char* buf, int size)
 {
     int remain, r;
-    int count = 0, i;
+    int count = 0;
 
     if (size <= 0) {
         ALOGE("Invalid size arguement!");
@@ -626,7 +626,7 @@ int rome_edl_patch_download_request(int fd)
         err = hci_send_vs_cmd(fd, (unsigned char *)cmd, rsp, size);
         if ( err != size) {
             ALOGE("Failed to send the patch payload to the Controller!");
-            goto error;
+            return -1;
         }
 
         /* Read Command Complete Event */
@@ -634,7 +634,7 @@ int rome_edl_patch_download_request(int fd)
         if ( err < 0) {
             ALOGE("%s: Failed to downlaod patch segment: %d!",
             __FUNCTION__, index);
-            goto error;
+            return -1;
         }
         ALOGI("%s: Successfully downloaded patch segment: %d",
         __FUNCTION__, index);
@@ -660,7 +660,7 @@ int rome_edl_patch_download_request(int fd)
         err = hci_send_vs_cmd(fd, (unsigned char *)cmd, rsp, size);
         if ( err != size) {
             ALOGE("Failed to send the patch payload to the Controller!");
-            goto error;
+            return -1;
         }
 
         /* Read Command Complete Event */
@@ -668,20 +668,18 @@ int rome_edl_patch_download_request(int fd)
         if ( err < 0) {
             ALOGE("%s: Failed to downlaod patch segment: %d!",
                 __FUNCTION__, index);
-            goto error;
+            return -1;
         }
 
         ALOGI("%s: Successfully downloaded patch segment: %d",
         __FUNCTION__, index);
     }
-
-error:
     return err;
 }
 
 static int rome_download_rampatch(int fd)
 {
-    int c, tmp, size, index, ret = -1;
+    int c, size, index, ret = -1;
 
     ALOGI("%s: ", __FUNCTION__);
 
@@ -777,22 +775,21 @@ int rome_attach_rampatch(int fd)
     err = hci_send_vs_cmd(fd, (unsigned char *)cmd, rsp, size);
     if ( err != size) {
         ALOGE("Failed to attach the patch payload to the Controller!");
-        goto error;
+        return -1;
     }
 
     /* Read Command Complete Event */
     err = read_hci_event(fd, rsp, HCI_MAX_EVENT_SIZE);
     if ( err < 0) {
         ALOGE("%s: Failed to attach the patch segment(s)", __FUNCTION__);
-        goto error;
+	return -1;
     }
-error:
     return err;
 }
 
 int rome_rampatch_reset(int fd)
 {
-    int size, err = 0, flags;
+    int size, err = 0;
     unsigned char cmd[HCI_MAX_CMD_SIZE];
     struct timespec tm = { 0, 100*1000*1000 }; /* 100 ms */
 
@@ -825,7 +822,7 @@ int rome_get_tlv_file(char *file_path)
 {
     FILE * pFile;
     long fileSize;
-    int readSize, err = 0, total_segment, remain_size, nvm_length, nvm_index, i;
+    int readSize, nvm_length, nvm_index, i;
     unsigned short nvm_tag_len;
     tlv_patch_info *ptlv_header;
     tlv_nvm_hdr *nvm_ptr;
@@ -1088,7 +1085,7 @@ int rome_download_tlv_file(int fd)
         free (pdata_buffer);
         pdata_buffer = NULL;
     }
-nvm_download:
+
     if(!nvm_file_path) {
         ALOGI("%s: nvm file is not available", __FUNCTION__);
         err = 0; // in case of nvm/rampatch is not available
@@ -1112,7 +1109,6 @@ error:
 int rome_1_0_nvm_tag_dnld(int fd)
 {
     int i, size, err = 0;
-    unsigned char cmd[HCI_MAX_CMD_SIZE];
     unsigned char rsp[HCI_MAX_EVENT_SIZE];
 
 #if (NVM_VERSION >= ROME_1_0_100019)
@@ -1569,7 +1565,6 @@ int rome_hci_reset(int fd)
     unsigned char cmd[HCI_MAX_CMD_SIZE];
     unsigned char rsp[HCI_MAX_EVENT_SIZE];
     hci_command_hdr *cmd_hdr;
-    int flags;
 
     ALOGI("%s: HCI RESET ", __FUNCTION__);
 
@@ -1607,7 +1602,6 @@ int rome_wipower_current_charging_status_req(int fd)
     unsigned char cmd[HCI_MAX_CMD_SIZE];
     unsigned char rsp[HCI_MAX_EVENT_SIZE];
     hci_command_hdr *cmd_hdr;
-    int flags;
 
     memset(cmd, 0x0, HCI_MAX_CMD_SIZE);
 
@@ -1655,7 +1649,6 @@ int addon_feature_req(int fd)
     unsigned char cmd[HCI_MAX_CMD_SIZE];
     unsigned char rsp[HCI_MAX_EVENT_SIZE];
     hci_command_hdr *cmd_hdr;
-    int flags;
 
     memset(cmd, 0x0, HCI_MAX_CMD_SIZE);
 
@@ -1718,7 +1711,6 @@ int rome_wipower_forward_handoff_req(int fd)
     unsigned char cmd[HCI_MAX_CMD_SIZE];
     unsigned char rsp[HCI_MAX_EVENT_SIZE];
     hci_command_hdr *cmd_hdr;
-    int flags;
 
     memset(cmd, 0x0, HCI_MAX_CMD_SIZE);
 

@@ -41,7 +41,7 @@
 #include <unistd.h>
 
 #include <cutils/properties.h>
-#include <utils/Log.h>
+#include <log/log.h>
 #define MAX_CNT_RETRY 100
 
 int hw_config(int nState)
@@ -98,7 +98,6 @@ int readTrpState()
 int is_hw_ready()
 {
     int i=0;
-    char szStatus[10] = {0,};
 
     for(i=MAX_CNT_RETRY; i>0; i--){
        //TODO :: checking routine
@@ -124,7 +123,6 @@ int is_hw_ready()
 void hw_epilog_cback(void *p_mem)
 {
     HC_BT_HDR *p_evt_buf = (HC_BT_HDR *) p_mem;
-    char        *p_name, *p_tmp;
     uint8_t     *p, status;
     uint16_t    opcode;
 
